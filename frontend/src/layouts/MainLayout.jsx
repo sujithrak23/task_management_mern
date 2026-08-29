@@ -1,15 +1,13 @@
-import React from 'react'
-import Navbar from '../components/Navbar';
+import React from "react";
+import Navbar from "../components/Navbar";
 
 const MainLayout = ({ children }) => {
   return (
-    <>
-      <div className='relative bg-gray-50 h-screen w-screen overflow-x-hidden'>
-        <Navbar />
-        {children}
-      </div>
-    </>
-  )
-}
+    <div className="min-h-screen bg-slate-950 text-slate-100">
+      <Navbar />
+      <main>{children}</main>
+    </div>
+  );
+};
 
 export default MainLayout;

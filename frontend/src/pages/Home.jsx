@@ -1,89 +1,91 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 
 const Home = () => {
-
-  useEffect(() => {
-    document.title = "Task Manager";
-  }, []);
-
   return (
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center px-6">
+      <div className="w-full min-h-screen flex items-center justify-center">
+        <div className="text-center max-w-4xl">
 
-    <div className="min-h-screen bg-primary text-white flex items-center justify-center px-4">
+          {/* Task Manager Icon */}
+          <div className="flex justify-center mb-8">
+            <div className="w-28 h-28 rounded-full bg-emerald-500/10 border border-emerald-400 flex items-center justify-center">
+              <i className="fa-solid fa-list-check text-6xl text-emerald-400"></i>
+            </div>
+          </div>
 
-      <div className="text-center max-w-3xl">
+          {/* Heading */}
+          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
+            Welcome to Task Manager App
+          </h1>
 
-        {/* Icon */}
+          {/* Description */}
+          <p className="text-xl md:text-2xl text-slate-300 mb-12">
+            Manage tasks, assign work and track progress easily.
+          </p>
 
-        <div className="mb-6">
+          {/* Login Buttons */}
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-5">
 
-          <i className="fa-solid fa-list-check text-6xl"></i>
+            {/* Admin Login */}
+            <Link
+              to="/login"
+              state={{ loginRole: "admin" }}
+              className="
+                w-60
+                px-8
+                py-4
+                rounded-lg
+                bg-emerald-500
+                hover:bg-emerald-600
+                text-white
+                font-bold
+                text-lg
+                shadow-lg
+                hover:shadow-emerald-500/20
+                flex
+                items-center
+                justify-center
+                gap-3
+              "
+            >
+              <i className="fa-solid fa-user-shield"></i>
+              Admin Login
+            </Link>
+
+            {/* Employee Login */}
+            <Link
+              to="/login"
+              state={{ loginRole: "employee" }}
+              className="
+                w-60
+                px-8
+                py-4
+                rounded-lg
+                bg-transparent
+                border-2
+                border-slate-500
+                hover:border-emerald-400
+                hover:bg-slate-900
+                text-white
+                font-bold
+                text-lg
+                flex
+                items-center
+                justify-center
+                gap-3
+              "
+            >
+              <i className="fa-solid fa-user"></i>
+              Employee Login
+            </Link>
+
+          </div>
 
         </div>
-
-
-        {/* Heading */}
-
-        <h1 className="text-3xl md:text-5xl font-bold">
-
-          Welcome to Task Manager App
-
-        </h1>
-
-
-        <p className="mt-5 text-lg md:text-xl text-white/90">
-
-          Manage tasks, assign work and track progress easily.
-
-        </p>
-
-
-        {/* Login Buttons */}
-
-        <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
-
-
-          {/* Admin */}
-
-          <Link
-            to="/login"
-            state={{
-              loginRole: "admin"
-            }}
-            className="bg-white text-primary px-8 py-4 rounded-md font-semibold text-lg shadow-md hover:bg-gray-100 transition"
-          >
-
-            <i className="fa-solid fa-user-shield mr-2"></i>
-
-            Admin Login
-
-          </Link>
-
-
-          {/* Employee */}
-
-          <Link
-            to="/login"
-            state={{
-              loginRole: "employee"
-            }}
-            className="border-2 border-white text-white px-8 py-4 rounded-md font-semibold text-lg hover:bg-white hover:text-primary transition"
-          >
-
-            <i className="fa-solid fa-user mr-2"></i>
-
-            Employee Login
-
-          </Link>
-
-        </div>
-
       </div>
-
     </div>
-
   );
-
 };
 
 export default Home;

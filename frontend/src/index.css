@@ -2,7 +2,244 @@
 @tailwind components;
 @tailwind utilities;
 
-body
-{
+/* =========================================
+   GLOBAL DARK THEME
+   ========================================= */
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
   font-family: "Roboto", sans-serif;
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+/* =========================================
+   BACKGROUNDS
+   ========================================= */
+
+.bg-white {
+  background-color: #1e293b !important;
+}
+
+.bg-gray-50 {
+  background-color: #0f172a !important;
+}
+
+.bg-gray-100 {
+  background-color: #1e293b !important;
+}
+
+.bg-gray-200 {
+  background-color: #334155 !important;
+}
+
+/* =========================================
+   TABLES
+   ========================================= */
+
+table {
+  width: 100%;
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+thead,
+thead tr {
+  background-color: #111827 !important;
+  color: #f8fafc !important;
+}
+
+tbody {
+  background-color: #1e293b !important;
+}
+
+/* Normal table rows */
+tbody tr {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+/* Hover table rows */
+tbody tr:hover {
+  background-color: #334155 !important;
+  color: #ffffff !important;
+}
+
+/* Table cells */
+td,
+th {
+  border-color: #334155 !important;
+}
+
+/* =========================================
+   TEXT
+   ========================================= */
+
+.text-black {
+  color: #f8fafc !important;
+}
+
+.text-gray-900 {
+  color: #f8fafc !important;
+}
+
+.text-gray-800 {
+  color: #f1f5f9 !important;
+}
+
+.text-gray-700 {
+  color: #e2e8f0 !important;
+}
+
+.text-gray-600 {
+  color: #cbd5e1 !important;
+}
+
+.text-gray-500 {
+  color: #94a3b8 !important;
+}
+
+.text-gray-400 {
+  color: #94a3b8 !important;
+}
+
+/* =========================================
+   BORDERS
+   ========================================= */
+
+.border-gray-100 {
+  border-color: #334155 !important;
+}
+
+.border-gray-200 {
+  border-color: #334155 !important;
+}
+
+.border-gray-300 {
+  border-color: #475569 !important;
+}
+
+/* =========================================
+   INPUTS / SELECT / TEXTAREA
+   ========================================= */
+
+input,
+textarea,
+select {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: #475569 !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: #10b981 !important;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
+}
+
+/* Dropdown options */
+select option {
+  background-color: #1e293b;
+  color: #f8fafc;
+}
+
+/* =========================================
+   CARDS
+   ========================================= */
+
+.shadow,
+.shadow-sm,
+.shadow-md,
+.shadow-lg {
+  /* Keep existing shadows */
+}
+
+/* =========================================
+   HOVER FIXES
+   ========================================= */
+
+/* White hover backgrounds */
+.hover\:bg-white:hover {
+  background-color: #334155 !important;
+}
+
+.hover\:bg-gray-50:hover {
+  background-color: #334155 !important;
+}
+
+.hover\:bg-gray-100:hover {
+  background-color: #334155 !important;
+}
+
+.hover\:bg-gray-200:hover {
+  background-color: #475569 !important;
+}
+
+/* =========================================
+   BUTTON HOVERS
+   ========================================= */
+
+button:hover {
+  transition: all 0.2s ease;
+}
+
+/* =========================================
+   SCROLLBAR
+   ========================================= */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* =========================================
+   LINKS
+   ========================================= */
+
+a {
+  transition: all 0.2s ease;
+}
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+
+@media (max-width: 768px) {
+  nav {
+    gap: 4px;
+  }
+
+  nav a,
+  nav button {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
 }
