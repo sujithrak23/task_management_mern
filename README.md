@@ -28,7 +28,7 @@ The system has two roles:
   - In Progress
   - Completed
 - Receive email notification when a task is assigned
-- Employees do **not** edit or delete tasks from the Employee UI
+- Employees can not edit or delete tasks from the Employee UI
 
 ## Technology Stack
 
