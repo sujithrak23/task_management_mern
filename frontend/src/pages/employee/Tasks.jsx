@@ -1078,64 +1078,7 @@ const EmployeeTasks = () => {
                       </div>
 
 
-                      {/* EDIT */}
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          openEdit(
-                            task
-                          )
-                        }
-                        className="border rounded-md px-4 py-2 text-blue-600 hover:bg-blue-50"
-                      >
-
-                        <i className="fa-solid fa-pen mr-2" />
-
-                        Edit
-
-                      </button>
-
-
-                      {/* DELETE */}
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleDelete(
-                            task
-                          )
-                        }
-                        disabled={
-                          deletingId ===
-                          task._id
-                        }
-                        className="border rounded-md px-4 py-2 text-red-600 hover:bg-red-50 disabled:opacity-50"
-                      >
-
-                        <i
-                          className={`fa-solid ${
-                            deletingId ===
-                            task._id
-
-                              ? "fa-spinner fa-spin"
-
-                              : "fa-trash"
-
-                          } mr-2`}
-                        />
-
-
-                        {deletingId ===
-                        task._id
-
-                          ? "Deleting..."
-
-                          : "Delete"
-
-                        }
-
-                      </button>
+                    
 
                     </div>
 
