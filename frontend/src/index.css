@@ -61,6 +61,7 @@ tbody {
 }
 
 /* Normal table rows */
+
 tbody tr {
   background-color: #1e293b !important;
   color: #f8fafc !important;
@@ -68,12 +69,14 @@ tbody tr {
 }
 
 /* Hover table rows */
+
 tbody tr:hover {
   background-color: #334155 !important;
   color: #ffffff !important;
 }
 
 /* Table cells */
+
 td,
 th {
   border-color: #334155 !important;
@@ -153,13 +156,14 @@ select:focus {
 }
 
 /* Dropdown options */
+
 select option {
   background-color: #1e293b;
   color: #f8fafc;
 }
 
 /* =========================================
-   CARDS
+   CARDS / SHADOWS
    ========================================= */
 
 .shadow,
@@ -174,6 +178,7 @@ select option {
    ========================================= */
 
 /* White hover backgrounds */
+
 .hover\:bg-white:hover {
   background-color: #334155 !important;
 }
@@ -242,4 +247,4 @@ a {
     padding-left: 10px;
     padding-right: 10px;
   }
-stop
+}

@@ -81,7 +81,7 @@ exports.signup = async (req, res) => {
     // Check whether email already exists
 
     const existingUser = await User.findOne({
-      email
+      email: email.trim().toLowerCase()
     });
 
     if (existingUser) {
@@ -104,8 +104,8 @@ exports.signup = async (req, res) => {
     // Create employee account
 
     await User.create({
-      name,
-      email,
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
       password: hashedPassword,
       role: "employee"
     });
@@ -119,10 +119,10 @@ exports.signup = async (req, res) => {
 
   catch (err) {
 
-    console.error(err);
+    console.error("SIGNUP ERROR:", err);
 
     return res.status(500).json({
-      msg: "Internal Server Error"
+      msg: err.message || "Internal Server Error"
     });
 
   }
@@ -134,7 +134,7 @@ exports.signup = async (req, res) => {
 |--------------------------------------------------------------------------
 | LOGIN
 |--------------------------------------------------------------------------
-| Frontend sends ONLY:
+| Frontend sends:
 |
 | email
 | password
@@ -165,6 +165,21 @@ exports.login = async (req, res) => {
     }
 
 
+    // Check data types
+
+    if (
+      typeof email !== "string" ||
+      typeof password !== "string"
+    ) {
+
+      return res.status(400).json({
+        status: false,
+        msg: "Invalid login details"
+      });
+
+    }
+
+
     // Validate email
 
     if (!validateEmail(email)) {
@@ -180,7 +195,7 @@ exports.login = async (req, res) => {
     // Find user
 
     const user = await User.findOne({
-      email
+      email: email.trim().toLowerCase()
     });
 
     if (!user) {
@@ -188,6 +203,18 @@ exports.login = async (req, res) => {
       return res.status(400).json({
         status: false,
         msg: "This email is not registered!!"
+      });
+
+    }
+
+
+    // Check whether password exists
+
+    if (!user.password) {
+
+      return res.status(500).json({
+        status: false,
+        msg: "User password is missing in database"
       });
 
     }
@@ -218,14 +245,27 @@ exports.login = async (req, res) => {
     |
     | We do NOT trust the frontend to tell us:
     | "I am admin"
-    |
     |--------------------------------------------------------------------------
     */
 
+    if (!user.role) {
+
+      return res.status(500).json({
+        status: false,
+        msg: "User role is missing in database"
+      });
+
+    }
+
+
+    // Create JWT token
 
     const token = createAccessToken({
+
       id: user._id,
+
       role: user.role
+
     });
 
 
@@ -239,7 +279,7 @@ exports.login = async (req, res) => {
     delete userResponse.password;
 
 
-    // Send response
+    // Send successful response
 
     return res.status(200).json({
 
@@ -257,11 +297,14 @@ exports.login = async (req, res) => {
 
   catch (err) {
 
-    console.error(err);
+    console.error("LOGIN ERROR:", err);
 
     return res.status(500).json({
+
       status: false,
-      msg: "Internal Server Error"
+
+      msg: err.message || "Internal Server Error"
+
     });
 
   }
