@@ -11,19 +11,30 @@ import {
 import api from "../../api";
 
 
+const EMPTY_FORM = {
+
+  title: "",
+
+  description: "",
+
+  assignedTo: "",
+
+  priority: "Medium",
+
+  status: "Not Started"
+
+};
+
+
 const AdminTasks = () => {
 
-  const authState =
-    useSelector(
-      state => state.authReducer
-    );
+  const {
+    token
+  } = useSelector(
+    state =>
+      state.authReducer
+  );
 
-
-  /*
-  |--------------------------------------------------------------------------
-  | STATE
-  |--------------------------------------------------------------------------
-  */
 
   const [
     employees,
@@ -44,14 +55,14 @@ const AdminTasks = () => {
 
 
   const [
-    formLoading,
-    setFormLoading
+    saving,
+    setSaving
   ] = useState(false);
 
 
   const [
-    deletingTaskId,
-    setDeletingTaskId
+    deletingId,
+    setDeletingId
   ] = useState(null);
 
 
@@ -62,34 +73,16 @@ const AdminTasks = () => {
 
 
   const [
-    formError,
-    setFormError
+    message,
+    setMessage
   ] = useState("");
 
-
-  const [
-    successMessage,
-    setSuccessMessage
-  ] = useState("");
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | SEARCH
-  |--------------------------------------------------------------------------
-  */
 
   const [
     search,
     setSearch
   ] = useState("");
 
-
-  /*
-  |--------------------------------------------------------------------------
-  | PAGINATION
-  |--------------------------------------------------------------------------
-  */
 
   const [
     page,
@@ -108,16 +101,10 @@ const AdminTasks = () => {
 
     total: 0,
 
-    totalPages: 1
+    totalPages: 0
 
   });
 
-
-  /*
-  |--------------------------------------------------------------------------
-  | FORM
-  |--------------------------------------------------------------------------
-  */
 
   const [
     showForm,
@@ -132,37 +119,17 @@ const AdminTasks = () => {
 
 
   const [
-    formData,
-    setFormData
-  ] = useState({
-
-    title: "",
-
-    description: "",
-
-    assignedTo: "",
-
-    priority: "Medium",
-
-    status: "Not Started"
-
-  });
+    form,
+    setForm
+  ] = useState(
+    EMPTY_FORM
+  );
 
 
-  /*
-  |--------------------------------------------------------------------------
-  | AUTH HEADER
-  |--------------------------------------------------------------------------
-  */
+  const headers = {
 
-  const getHeaders = () => {
-
-    return {
-
-      Authorization:
-        authState.token
-
-    };
+    Authorization:
+      token
 
   };
 
@@ -179,14 +146,15 @@ const AdminTasks = () => {
 
         try {
 
-          const response =
+          const {
+            data
+          } =
             await api.get(
 
               "/admin/employees",
 
               {
-                headers:
-                  getHeaders()
+                headers
               }
 
             );
@@ -194,7 +162,7 @@ const AdminTasks = () => {
 
           setEmployees(
 
-            response.data.employees ||
+            data.employees ||
             []
 
           );
@@ -202,8 +170,6 @@ const AdminTasks = () => {
         }
 
         catch (err) {
-
-          console.error(err);
 
           setError(
 
@@ -216,9 +182,7 @@ const AdminTasks = () => {
         }
 
       },
-      [
-        authState.token
-      ]
+      [token]
     );
 
 
@@ -236,10 +200,10 @@ const AdminTasks = () => {
 
           setLoading(true);
 
-          setError("");
 
-
-          const response =
+          const {
+            data
+          } =
             await api.get(
 
               "/tasks/admin",
@@ -256,8 +220,7 @@ const AdminTasks = () => {
 
                 },
 
-                headers:
-                  getHeaders()
+                headers
 
               }
 
@@ -266,7 +229,7 @@ const AdminTasks = () => {
 
           setTasks(
 
-            response.data.tasks ||
+            data.tasks ||
             []
 
           );
@@ -274,7 +237,7 @@ const AdminTasks = () => {
 
           setPagination(
 
-            response.data.pagination ||
+            data.pagination ||
 
             {
 
@@ -284,17 +247,18 @@ const AdminTasks = () => {
 
               total: 0,
 
-              totalPages: 1
+              totalPages: 0
 
             }
 
           );
 
+
+          setError("");
+
         }
 
         catch (err) {
-
-          console.error(err);
 
           setError(
 
@@ -314,18 +278,12 @@ const AdminTasks = () => {
 
       },
       [
-        authState.token,
+        token,
         search,
         page
       ]
     );
 
-
-  /*
-  |--------------------------------------------------------------------------
-  | INITIAL LOAD
-  |--------------------------------------------------------------------------
-  */
 
   useEffect(() => {
 
@@ -347,19 +305,110 @@ const AdminTasks = () => {
 
   /*
   |--------------------------------------------------------------------------
-  | FORM CHANGE
+  | FORM
   |--------------------------------------------------------------------------
   */
 
-  const handleChange = (e) => {
+  const resetForm = () => {
+
+    setForm(
+      EMPTY_FORM
+    );
+
+    setEditingTask(
+      null
+    );
+
+  };
+
+
+  const openCreate = () => {
+
+    resetForm();
+
+    setError("");
+
+    setMessage("");
+
+    setShowForm(true);
+
+  };
+
+
+  const openEdit = (
+    task
+  ) => {
+
+    setEditingTask(
+      task
+    );
+
+
+    setForm({
+
+      title:
+        task.title ||
+        "",
+
+      description:
+        task.description ||
+        "",
+
+      assignedTo:
+        task.assignedTo?._id ||
+        "",
+
+      priority:
+        task.priority ||
+        "Medium",
+
+      status:
+        task.status ||
+        "Not Started"
+
+    });
+
+
+    setError("");
+
+    setMessage("");
+
+    setShowForm(true);
+
+
+    window.scrollTo({
+
+      top: 0,
+
+      behavior:
+        "smooth"
+
+    });
+
+  };
+
+
+  const closeForm = () => {
+
+    setShowForm(false);
+
+    resetForm();
+
+  };
+
+
+  const handleChange = (
+    event
+  ) => {
 
     const {
       name,
       value
-    } = e.target;
+    } =
+      event.target;
 
 
-    setFormData(
+    setForm(
       previous => ({
 
         ...previous,
@@ -375,185 +424,29 @@ const AdminTasks = () => {
 
   /*
   |--------------------------------------------------------------------------
-  | RESET FORM
-  |--------------------------------------------------------------------------
-  */
-
-  const resetForm = () => {
-
-    setFormData({
-
-      title: "",
-
-      description: "",
-
-      assignedTo: "",
-
-      priority: "Medium",
-
-      status: "Not Started"
-
-    });
-
-
-    setEditingTask(null);
-
-    setFormError("");
-
-  };
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | OPEN CREATE FORM
-  |--------------------------------------------------------------------------
-  */
-
-  const openCreateForm = () => {
-
-    resetForm();
-
-    setSuccessMessage("");
-
-    setShowForm(true);
-
-  };
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | OPEN EDIT FORM
-  |--------------------------------------------------------------------------
-  */
-
-  const openEditForm = (
-    task
-  ) => {
-
-    setEditingTask(task);
-
-    setFormError("");
-
-    setSuccessMessage("");
-
-
-    setFormData({
-
-      title:
-        task.title || "",
-
-      description:
-        task.description || "",
-
-      assignedTo:
-        task.assignedTo?._id || "",
-
-      priority:
-        task.priority || "Medium",
-
-      status:
-        task.status || "Not Started"
-
-    });
-
-
-    setShowForm(true);
-
-
-    window.scrollTo({
-
-      top: 0,
-
-      behavior: "smooth"
-
-    });
-
-  };
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | CLOSE FORM
-  |--------------------------------------------------------------------------
-  */
-
-  const closeForm = () => {
-
-    setShowForm(false);
-
-    resetForm();
-
-  };
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | CREATE / UPDATE TASK
+  | CREATE / UPDATE
   |--------------------------------------------------------------------------
   */
 
   const handleSubmit =
-    async (e) => {
+    async event => {
 
-      e.preventDefault();
-
-
-      setFormError("");
-
-      setSuccessMessage("");
+      event.preventDefault();
 
 
-      /*
-      |--------------------------------------------------------------------------
-      | Validation
-      |--------------------------------------------------------------------------
-      */
+      setError("");
 
-      if (
-        !formData.title.trim()
-      ) {
-
-        setFormError(
-          "Task title is required"
-        );
-
-        return;
-
-      }
+      setMessage("");
 
 
       if (
-        !formData.description.trim()
+        !form.title.trim() ||
+        !form.description.trim() ||
+        !form.assignedTo
       ) {
 
-        setFormError(
-          "Task description is required"
-        );
-
-        return;
-
-      }
-
-
-      if (
-        !formData.assignedTo
-      ) {
-
-        setFormError(
-          "Please select an employee"
-        );
-
-        return;
-
-      }
-
-
-      if (
-        !formData.priority
-      ) {
-
-        setFormError(
-          "Please select a priority"
+        setError(
+          "Please fill all the fields"
         );
 
         return;
@@ -563,71 +456,43 @@ const AdminTasks = () => {
 
       try {
 
-        setFormLoading(true);
+        setSaving(true);
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | UPDATE
-        |--------------------------------------------------------------------------
-        */
+        if (
+          editingTask
+        ) {
 
-        if (editingTask) {
-
-          const response =
+          const {
+            data
+          } =
             await api.put(
 
               `/tasks/admin/${editingTask._id}`,
 
-              {
-
-                title:
-                  formData.title.trim(),
-
-                description:
-                  formData.description.trim(),
-
-                assignedTo:
-                  formData.assignedTo,
-
-                priority:
-                  formData.priority,
-
-                status:
-                  formData.status
-
-              },
+              form,
 
               {
-
-                headers:
-                  getHeaders()
-
+                headers
               }
 
             );
 
 
-          setSuccessMessage(
+          setMessage(
 
-            response.data.msg ||
-
+            data.msg ||
             "Task updated successfully"
 
           );
 
         }
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | CREATE
-        |--------------------------------------------------------------------------
-        */
-
         else {
 
-          const response =
+          const {
+            data
+          } =
             await api.post(
 
               "/tasks/admin",
@@ -635,33 +500,29 @@ const AdminTasks = () => {
               {
 
                 title:
-                  formData.title.trim(),
+                  form.title,
 
                 description:
-                  formData.description.trim(),
+                  form.description,
 
                 assignedTo:
-                  formData.assignedTo,
+                  form.assignedTo,
 
                 priority:
-                  formData.priority
+                  form.priority
 
               },
 
               {
-
-                headers:
-                  getHeaders()
-
+                headers
               }
 
             );
 
 
-          setSuccessMessage(
+          setMessage(
 
-            response.data.msg ||
-
+            data.msg ||
             "Task assigned successfully"
 
           );
@@ -669,44 +530,17 @@ const AdminTasks = () => {
         }
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Close form
-        |--------------------------------------------------------------------------
-        */
+        closeForm();
 
-        setShowForm(false);
+        setPage(1);
 
-        resetForm();
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Go back to first page
-        |--------------------------------------------------------------------------
-        */
-
-        if (
-          page !== 1
-        ) {
-
-          setPage(1);
-
-        }
-
-        else {
-
-          fetchTasks();
-
-        }
+        await fetchTasks();
 
       }
 
       catch (err) {
 
-        console.error(err);
-
-        setFormError(
+        setError(
 
           err.response?.data?.msg ||
 
@@ -718,7 +552,7 @@ const AdminTasks = () => {
 
       finally {
 
-        setFormLoading(false);
+        setSaving(false);
 
       }
 
@@ -727,17 +561,17 @@ const AdminTasks = () => {
 
   /*
   |--------------------------------------------------------------------------
-  | DELETE TASK
+  | DELETE
   |--------------------------------------------------------------------------
   */
 
   const handleDelete =
-    async (task) => {
+    async task => {
 
       const confirmed =
         window.confirm(
 
-          `Are you sure you want to delete "${task.title}"?`
+          `Delete task "${task.title}"?`
 
         );
 
@@ -751,45 +585,36 @@ const AdminTasks = () => {
 
       try {
 
-        setDeletingTaskId(
+        setDeletingId(
           task._id
         );
 
         setError("");
 
-        setSuccessMessage("");
+        setMessage("");
 
 
-        const response =
+        const {
+          data
+        } =
           await api.delete(
 
             `/tasks/admin/${task._id}`,
 
             {
-
-              headers:
-                getHeaders()
-
+              headers
             }
 
           );
 
 
-        setSuccessMessage(
+        setMessage(
 
-          response.data.msg ||
-
+          data.msg ||
           "Task deleted successfully"
 
         );
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | If deleting the last task on a page,
-        | move to previous page.
-        |--------------------------------------------------------------------------
-        */
 
         if (
           tasks.length === 1 &&
@@ -797,22 +622,21 @@ const AdminTasks = () => {
         ) {
 
           setPage(
-            page - 1
+            previous =>
+              previous - 1
           );
 
         }
 
         else {
 
-          fetchTasks();
+          await fetchTasks();
 
         }
 
       }
 
       catch (err) {
-
-        console.error(err);
 
         setError(
 
@@ -826,7 +650,9 @@ const AdminTasks = () => {
 
       finally {
 
-        setDeletingTaskId(null);
+        setDeletingId(
+          null
+        );
 
       }
 
@@ -839,16 +665,16 @@ const AdminTasks = () => {
   |--------------------------------------------------------------------------
   */
 
-  const handleSearch = (e) => {
+  const handleSearch =
+    event => {
 
-    setSearch(
-      e.target.value
-    );
+      setSearch(
+        event.target.value
+      );
 
+      setPage(1);
 
-    setPage(1);
-
-  };
+    };
 
 
   /*
@@ -857,227 +683,118 @@ const AdminTasks = () => {
   |--------------------------------------------------------------------------
   */
 
-  const goToPage = (
-    selectedPage
-  ) => {
+  const goToPage =
+    nextPage => {
 
-    if (
-      selectedPage < 1 ||
-      selectedPage >
-        pagination.totalPages
-    ) {
-
-      return;
-
-    }
-
-
-    setPage(
-      selectedPage
-    );
-
-  };
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | PAGE NUMBERS
-  |--------------------------------------------------------------------------
-  */
-
-  const getPageNumbers = () => {
-
-    const totalPages =
-      pagination.totalPages || 1;
-
-
-    const currentPage =
-      pagination.page || page;
-
-
-    const pages = [];
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Small number of pages
-    |--------------------------------------------------------------------------
-    */
-
-    if (
-      totalPages <= 5
-    ) {
-
-      for (
-        let i = 1;
-        i <= totalPages;
-        i++
+      if (
+        nextPage < 1 ||
+        nextPage >
+          pagination.totalPages
       ) {
 
-        pages.push(i);
+        return;
 
       }
 
 
-      return pages;
-
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Always show first page
-    |--------------------------------------------------------------------------
-    */
-
-    pages.push(1);
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Middle pages
-    |--------------------------------------------------------------------------
-    */
-
-    let start =
-      Math.max(
-        currentPage - 1,
-        2
+      setPage(
+        nextPage
       );
 
-
-    let end =
-      Math.min(
-        currentPage + 1,
-        totalPages - 1
-      );
-
-
-    if (
-      start > 2
-    ) {
-
-      pages.push("...");
-
-    }
-
-
-    for (
-      let i = start;
-      i <= end;
-      i++
-    ) {
-
-      pages.push(i);
-
-    }
-
-
-    if (
-      end < totalPages - 1
-    ) {
-
-      pages.push("...");
-
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Last page
-    |--------------------------------------------------------------------------
-    */
-
-    pages.push(
-      totalPages
-    );
-
-
-    return pages;
-
-  };
+    };
 
 
   /*
   |--------------------------------------------------------------------------
-  | STATUS BADGE
+  | BADGES
   |--------------------------------------------------------------------------
   */
 
-  const statusClass = (
-    status
-  ) => {
+  const statusClass =
+    status => {
 
-    switch (status) {
-
-      case "Completed":
+      if (
+        status ===
+        "Completed"
+      ) {
 
         return (
           "bg-green-100 text-green-700"
         );
 
+      }
 
-      case "In Progress":
+
+      if (
+        status ===
+        "In Progress"
+      ) {
 
         return (
           "bg-blue-100 text-blue-700"
         );
 
+      }
 
-      case "Pending":
+
+      if (
+        status ===
+        "Pending"
+      ) {
 
         return (
           "bg-yellow-100 text-yellow-700"
         );
 
-
-      default:
-
-        return (
-          "bg-gray-100 text-gray-700"
-        );
-
-    }
-
-  };
+      }
 
 
-  /*
-  |--------------------------------------------------------------------------
-  | PRIORITY BADGE
-  |--------------------------------------------------------------------------
-  */
+      return (
+        "bg-gray-100 text-gray-700"
+      );
 
-  const priorityClass = (
-    priority
-  ) => {
+    };
 
-    switch (priority) {
 
-      case "High":
+  const priorityClass =
+    priority => {
+
+      if (
+        priority ===
+        "High"
+      ) {
 
         return (
           "bg-red-100 text-red-700"
         );
 
+      }
 
-      case "Low":
+
+      if (
+        priority ===
+        "Low"
+      ) {
 
         return (
           "bg-green-100 text-green-700"
         );
 
+      }
 
-      default:
 
-        return (
-          "bg-yellow-100 text-yellow-700"
-        );
+      return (
+        "bg-yellow-100 text-yellow-700"
+      );
 
-    }
+    };
 
-  };
 
+  /*
+  |--------------------------------------------------------------------------
+  | UI
+  |--------------------------------------------------------------------------
+  */
 
   return (
 
@@ -1085,10 +802,6 @@ const AdminTasks = () => {
 
       <div className="max-w-7xl mx-auto">
 
-
-        {/* ==================================================
-            HEADER
-        ================================================== */}
 
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
 
@@ -1112,22 +825,12 @@ const AdminTasks = () => {
 
           <button
             type="button"
-            onClick={() => {
-
-              if (showForm) {
-
-                closeForm();
-
-              }
-
-              else {
-
-                openCreateForm();
-
-              }
-
-            }}
-            className="bg-primary text-white px-5 py-3 rounded-md hover:opacity-90 transition"
+            onClick={
+              showForm
+                ? closeForm
+                : openCreate
+            }
+            className="bg-primary text-white px-5 py-3 rounded-md hover:opacity-90"
           >
 
             <i
@@ -1136,7 +839,7 @@ const AdminTasks = () => {
                   ? "fa-xmark"
                   : "fa-plus"
               } mr-2`}
-            ></i>
+            />
 
 
             {showForm
@@ -1149,32 +852,24 @@ const AdminTasks = () => {
         </div>
 
 
-        {/* ==================================================
-            SUCCESS MESSAGE
-        ================================================== */}
-
-        {successMessage && (
+        {message && (
 
           <div className="mb-5 bg-green-50 text-green-700 border border-green-200 rounded-md px-4 py-3">
 
-            <i className="fa-solid fa-circle-check mr-2"></i>
+            <i className="fa-solid fa-circle-check mr-2" />
 
-            {successMessage}
+            {message}
 
           </div>
 
         )}
 
 
-        {/* ==================================================
-            ERROR MESSAGE
-        ================================================== */}
-
         {error && (
 
           <div className="mb-5 bg-red-50 text-red-600 border border-red-200 rounded-md px-4 py-3">
 
-            <i className="fa-solid fa-circle-exclamation mr-2"></i>
+            <i className="fa-solid fa-circle-exclamation mr-2" />
 
             {error}
 
@@ -1183,50 +878,18 @@ const AdminTasks = () => {
         )}
 
 
-        {/* ==================================================
-            CREATE / EDIT FORM
-        ================================================== */}
-
         {showForm && (
 
           <div className="bg-white border rounded-lg shadow-sm p-6 mb-6">
 
-            <div className="flex items-center justify-between mb-5">
+            <h2 className="text-xl font-semibold mb-5">
 
-              <h2 className="text-xl font-semibold">
+              {editingTask
+                ? "Edit Task"
+                : "Assign New Task"
+              }
 
-                {editingTask
-                  ? "Edit Task"
-                  : "Assign New Task"
-                }
-
-              </h2>
-
-
-              <button
-                type="button"
-                onClick={closeForm}
-                className="text-gray-500 hover:text-gray-800"
-              >
-
-                <i className="fa-solid fa-xmark text-xl"></i>
-
-              </button>
-
-            </div>
-
-
-            {formError && (
-
-              <div className="mb-5 bg-red-50 text-red-600 border border-red-200 rounded-md px-4 py-3">
-
-                <i className="fa-solid fa-circle-exclamation mr-2"></i>
-
-                {formError}
-
-              </div>
-
-            )}
+            </h2>
 
 
             <form
@@ -1236,17 +899,9 @@ const AdminTasks = () => {
               className="space-y-5"
             >
 
-
-              {/* ------------------------------------------------
-                  TITLE
-              ------------------------------------------------ */}
-
               <div>
 
-                <label
-                  htmlFor="title"
-                  className="block font-medium mb-2"
-                >
+                <label className="block font-medium mb-2">
 
                   Task Title
 
@@ -1254,33 +909,24 @@ const AdminTasks = () => {
 
 
                 <input
-                  id="title"
                   name="title"
-                  type="text"
                   value={
-                    formData.title
+                    form.title
                   }
                   onChange={
                     handleChange
                   }
-                  placeholder="Enter task title"
                   maxLength="150"
-                  className="w-full border rounded-md px-4 py-3 outline-none focus:border-primary"
+                  className="w-full border rounded-md px-4 py-3"
+                  placeholder="Enter task title"
                 />
 
               </div>
 
 
-              {/* ------------------------------------------------
-                  DESCRIPTION
-              ------------------------------------------------ */}
-
               <div>
 
-                <label
-                  htmlFor="description"
-                  className="block font-medium mb-2"
-                >
+                <label className="block font-medium mb-2">
 
                   Task Description
 
@@ -1288,54 +934,43 @@ const AdminTasks = () => {
 
 
                 <textarea
-                  id="description"
                   name="description"
                   value={
-                    formData.description
+                    form.description
                   }
                   onChange={
                     handleChange
                   }
-                  placeholder="Enter detailed task description"
-                  rows="5"
                   maxLength="2000"
-                  className="w-full border rounded-md px-4 py-3 outline-none focus:border-primary resize-none"
+                  rows="5"
+                  className="w-full border rounded-md px-4 py-3 resize-none"
+                  placeholder="Enter task description"
                 />
 
               </div>
 
 
-              {/* ------------------------------------------------
-                  EMPLOYEE / PRIORITY / STATUS
-              ------------------------------------------------ */}
-
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
 
-                {/* Employee */}
-
                 <div>
 
-                  <label
-                    htmlFor="assignedTo"
-                    className="block font-medium mb-2"
-                  >
+                  <label className="block font-medium mb-2">
 
-                    Assign Employee
+                    Employee
 
                   </label>
 
 
                   <select
-                    id="assignedTo"
                     name="assignedTo"
                     value={
-                      formData.assignedTo
+                      form.assignedTo
                     }
                     onChange={
                       handleChange
                     }
-                    className="w-full border rounded-md px-4 py-3 bg-white outline-none focus:border-primary"
+                    className="w-full border rounded-md px-4 py-3 bg-white"
                   >
 
                     <option value="">
@@ -1371,14 +1006,9 @@ const AdminTasks = () => {
                 </div>
 
 
-                {/* Priority */}
-
                 <div>
 
-                  <label
-                    htmlFor="priority"
-                    className="block font-medium mb-2"
-                  >
+                  <label className="block font-medium mb-2">
 
                     Priority
 
@@ -1386,35 +1016,26 @@ const AdminTasks = () => {
 
 
                   <select
-                    id="priority"
                     name="priority"
                     value={
-                      formData.priority
+                      form.priority
                     }
                     onChange={
                       handleChange
                     }
-                    className="w-full border rounded-md px-4 py-3 bg-white outline-none focus:border-primary"
+                    className="w-full border rounded-md px-4 py-3 bg-white"
                   >
 
                     <option value="High">
-
                       High
-
                     </option>
-
 
                     <option value="Medium">
-
                       Medium
-
                     </option>
 
-
                     <option value="Low">
-
                       Low
-
                     </option>
 
                   </select>
@@ -1422,14 +1043,9 @@ const AdminTasks = () => {
                 </div>
 
 
-                {/* Status */}
-
                 <div>
 
-                  <label
-                    htmlFor="status"
-                    className="block font-medium mb-2"
-                  >
+                  <label className="block font-medium mb-2">
 
                     Status
 
@@ -1437,10 +1053,9 @@ const AdminTasks = () => {
 
 
                   <select
-                    id="status"
                     name="status"
                     value={
-                      formData.status
+                      form.status
                     }
                     onChange={
                       handleChange
@@ -1448,76 +1063,47 @@ const AdminTasks = () => {
                     disabled={
                       !editingTask
                     }
-                    className="w-full border rounded-md px-4 py-3 bg-white outline-none focus:border-primary disabled:bg-gray-100 disabled:text-gray-500"
+                    className="w-full border rounded-md px-4 py-3 bg-white disabled:bg-gray-100"
                   >
 
                     <option value="Not Started">
-
                       Not Started
-
                     </option>
-
 
                     <option value="Pending">
-
                       Pending
-
                     </option>
-
 
                     <option value="In Progress">
-
                       In Progress
-
                     </option>
 
-
                     <option value="Completed">
-
                       Completed
-
                     </option>
 
                   </select>
-
-
-                  {!editingTask && (
-
-                    <p className="text-xs text-gray-400 mt-1">
-
-                      New tasks start as Not Started.
-
-                    </p>
-
-                  )}
 
                 </div>
 
               </div>
 
 
-              {/* ------------------------------------------------
-                  BUTTONS
-              ------------------------------------------------ */}
-
               <div className="flex gap-3">
 
                 <button
                   type="submit"
                   disabled={
-                    formLoading
+                    saving
                   }
-                  className="bg-primary text-white px-6 py-3 rounded-md hover:opacity-90 disabled:opacity-50"
+                  className="bg-primary text-white px-6 py-3 rounded-md disabled:opacity-50"
                 >
 
-                  {formLoading
-
+                  {saving
                     ? "Saving..."
-
                     : editingTask
                       ? "Update Task"
                       : "Assign Task"
-
                   }
 
                 </button>
@@ -1528,7 +1114,7 @@ const AdminTasks = () => {
                   onClick={
                     closeForm
                   }
-                  className="border px-6 py-3 rounded-md hover:bg-gray-50"
+                  className="border px-6 py-3 rounded-md"
                 >
 
                   Cancel
@@ -1544,19 +1130,14 @@ const AdminTasks = () => {
         )}
 
 
-        {/* ==================================================
-            SEARCH
-        ================================================== */}
-
         <div className="bg-white border rounded-lg shadow-sm p-4 mb-5">
 
           <div className="relative">
 
-            <i className="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            <i className="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
 
 
             <input
-              type="text"
               value={
                 search
               }
@@ -1564,7 +1145,7 @@ const AdminTasks = () => {
                 handleSearch
               }
               placeholder="Search tasks by title, description or employee..."
-              className="w-full border rounded-md pl-11 pr-4 py-3 outline-none focus:border-primary"
+              className="w-full border rounded-md pl-11 pr-4 py-3"
             />
 
           </div>
@@ -1572,23 +1153,13 @@ const AdminTasks = () => {
         </div>
 
 
-        {/* ==================================================
-            TASK TABLE
-        ================================================== */}
-
         <div className="bg-white border rounded-lg shadow-sm overflow-hidden">
 
           {loading ? (
 
             <div className="p-12 text-center text-gray-500">
 
-              <i className="fa-solid fa-spinner fa-spin text-2xl mb-3"></i>
-
-              <p>
-
-                Loading tasks...
-
-              </p>
+              Loading tasks...
 
             </div>
 
@@ -1602,52 +1173,32 @@ const AdminTasks = () => {
 
                   <tr>
 
-                    <th className="text-left px-5 py-4 font-semibold whitespace-nowrap">
-
+                    <th className="text-left px-5 py-4">
                       Task
-
                     </th>
 
-
-                    <th className="text-left px-5 py-4 font-semibold whitespace-nowrap">
-
+                    <th className="text-left px-5 py-4">
                       Employee
-
                     </th>
 
-
-                    <th className="text-left px-5 py-4 font-semibold whitespace-nowrap">
-
+                    <th className="text-left px-5 py-4">
                       Priority
-
                     </th>
 
-
-                    <th className="text-left px-5 py-4 font-semibold whitespace-nowrap">
-
+                    <th className="text-left px-5 py-4">
                       Status
-
                     </th>
 
-
-                    <th className="text-left px-5 py-4 font-semibold whitespace-nowrap">
-
+                    <th className="text-left px-5 py-4">
                       Created
-
                     </th>
 
-
-                    <th className="text-left px-5 py-4 font-semibold whitespace-nowrap">
-
+                    <th className="text-left px-5 py-4">
                       Updated
-
                     </th>
 
-
-                    <th className="text-left px-5 py-4 font-semibold whitespace-nowrap">
-
+                    <th className="text-left px-5 py-4">
                       Actions
-
                     </th>
 
                   </tr>
@@ -1663,28 +1214,10 @@ const AdminTasks = () => {
 
                       <td
                         colSpan="7"
-                        className="text-center py-14 text-gray-500"
+                        className="text-center py-12 text-gray-500"
                       >
 
-                        <i className="fa-solid fa-list-check text-3xl mb-3 block"></i>
-
-
-                        <p className="font-medium">
-
-                          No tasks found
-
-                        </p>
-
-
-                        {search && (
-
-                          <p className="text-sm mt-1">
-
-                            Try a different search term.
-
-                          </p>
-
-                        )}
+                        No tasks found.
 
                       </td>
 
@@ -1702,19 +1235,16 @@ const AdminTasks = () => {
                           className="border-b last:border-b-0 hover:bg-gray-50"
                         >
 
+                          <td className="px-5 py-4 min-w-[260px]">
 
-                          {/* TASK */}
-
-                          <td className="px-5 py-4 min-w-[250px]">
-
-                            <p className="font-semibold text-gray-800">
+                            <p className="font-semibold">
 
                               {task.title}
 
                             </p>
 
 
-                            <p className="text-sm text-gray-500 mt-1 max-w-sm">
+                            <p className="text-sm text-gray-500 mt-1">
 
                               {task.description}
 
@@ -1723,52 +1253,34 @@ const AdminTasks = () => {
                           </td>
 
 
-                          {/* EMPLOYEE */}
-
                           <td className="px-5 py-4 min-w-[190px]">
 
-                            {task.assignedTo ? (
+                            <p className="font-medium">
 
-                              <>
+                              {
+                                task.assignedTo?.name ||
+                                "Unassigned"
+                              }
 
-                                <p className="font-medium">
-
-                                  {
-                                    task.assignedTo.name
-                                  }
-
-                                </p>
+                            </p>
 
 
-                                <p className="text-sm text-gray-500">
+                            <p className="text-sm text-gray-500">
 
-                                  {
-                                    task.assignedTo.email
-                                  }
+                              {
+                                task.assignedTo?.email ||
+                                ""
+                              }
 
-                                </p>
-
-                              </>
-
-                            ) : (
-
-                              <span className="text-gray-400">
-
-                                Unassigned
-
-                              </span>
-
-                            )}
+                            </p>
 
                           </td>
 
 
-                          {/* PRIORITY */}
-
                           <td className="px-5 py-4">
 
                             <span
-                              className={`inline-block px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap ${priorityClass(task.priority)}`}
+                              className={`inline-block px-3 py-1 rounded-full text-sm ${priorityClass(task.priority)}`}
                             >
 
                               {task.priority}
@@ -1778,12 +1290,10 @@ const AdminTasks = () => {
                           </td>
 
 
-                          {/* STATUS */}
-
                           <td className="px-5 py-4">
 
                             <span
-                              className={`inline-block px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap ${statusClass(task.status)}`}
+                              className={`inline-block px-3 py-1 rounded-full text-sm whitespace-nowrap ${statusClass(task.status)}`}
                             >
 
                               {task.status}
@@ -1793,60 +1303,55 @@ const AdminTasks = () => {
                           </td>
 
 
-                          {/* CREATED */}
+                          <td className="px-5 py-4 text-sm whitespace-nowrap">
 
-                          <td className="px-5 py-4 text-sm text-gray-600 whitespace-nowrap">
+                            {
+                              task.createdAt
 
-                            {task.createdAt
-                              ? new Date(
-                                  task.createdAt
-                                ).toLocaleDateString()
-                              : "-"
+                                ? new Date(
+                                    task.createdAt
+                                  ).toLocaleDateString()
+
+                                : "-"
                             }
 
                           </td>
 
 
-                          {/* UPDATED */}
+                          <td className="px-5 py-4 text-sm whitespace-nowrap">
 
-                          <td className="px-5 py-4 text-sm text-gray-600 whitespace-nowrap">
+                            {
+                              task.updatedAt
 
-                            {task.updatedAt
-                              ? new Date(
-                                  task.updatedAt
-                                ).toLocaleDateString()
-                              : "-"
+                                ? new Date(
+                                    task.updatedAt
+                                  ).toLocaleDateString()
+
+                                : "-"
                             }
 
                           </td>
 
-
-                          {/* ACTIONS */}
 
                           <td className="px-5 py-4">
 
-                            <div className="flex items-center gap-2">
-
-
-                              {/* EDIT */}
+                            <div className="flex gap-2">
 
                               <button
                                 type="button"
                                 onClick={() =>
-                                  openEditForm(
+                                  openEdit(
                                     task
                                   )
                                 }
                                 title="Edit task"
-                                className="w-9 h-9 border rounded-md text-blue-600 hover:bg-blue-50 transition"
+                                className="w-9 h-9 border rounded-md text-blue-600 hover:bg-blue-50"
                               >
 
-                                <i className="fa-solid fa-pen"></i>
+                                <i className="fa-solid fa-pen" />
 
                               </button>
 
-
-                              {/* DELETE */}
 
                               <button
                                 type="button"
@@ -1856,23 +1361,21 @@ const AdminTasks = () => {
                                   )
                                 }
                                 disabled={
-                                  deletingTaskId ===
+                                  deletingId ===
                                   task._id
                                 }
                                 title="Delete task"
-                                className="w-9 h-9 border rounded-md text-red-600 hover:bg-red-50 disabled:opacity-50 transition"
+                                className="w-9 h-9 border rounded-md text-red-600 hover:bg-red-50 disabled:opacity-50"
                               >
 
-                                {deletingTaskId ===
-                                task._id ? (
-
-                                  <i className="fa-solid fa-spinner fa-spin"></i>
-
-                                ) : (
-
-                                  <i className="fa-solid fa-trash"></i>
-
-                                )}
+                                <i
+                                  className={`fa-solid ${
+                                    deletingId ===
+                                    task._id
+                                      ? "fa-spinner fa-spin"
+                                      : "fa-trash"
+                                  }`}
+                                />
 
                               </button>
 
@@ -1898,10 +1401,7 @@ const AdminTasks = () => {
         </div>
 
 
-        {/* ==================================================
-            PAGINATION
-            ALWAYS VISIBLE
-        ================================================== */}
+        {/* PAGINATION */}
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-5">
 
@@ -1911,145 +1411,91 @@ const AdminTasks = () => {
 
               ? "No tasks"
 
-              : (
-
-                <>
-                  Showing page{" "}
-                  <span className="font-medium text-gray-700">
-
-                    {pagination.page}
-
-                  </span>
-                  {" "}of{" "}
-                  <span className="font-medium text-gray-700">
-
-                    {pagination.totalPages}
-
-                  </span>
-
-                  {" "}·{" "}
-
-                  <span className="font-medium text-gray-700">
-
-                    {pagination.total}
-
-                  </span>
-
-                  {" "}
-                  {pagination.total === 1
-                    ? "task"
-                    : "tasks"
-                  }
-
-                </>
-
-              )
+              : `Showing page ${pagination.page} of ${pagination.totalPages} · ${pagination.total} task${pagination.total === 1 ? "" : "s"}`
 
             }
 
           </p>
 
 
-          {/* PAGINATION CONTROLS */}
-
           <div className="flex items-center gap-1">
-
-
-            {/* PREVIOUS */}
 
             <button
               type="button"
               disabled={
                 page <= 1 ||
-                pagination.totalPages <= 1
+                !pagination.totalPages
               }
               onClick={() =>
                 goToPage(
                   page - 1
                 )
               }
-              className="px-3 py-2 border rounded-md disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+              className="px-3 py-2 border rounded-md disabled:opacity-40"
             >
 
-              <i className="fa-solid fa-chevron-left"></i>
+              <i className="fa-solid fa-chevron-left" />
 
             </button>
 
 
-            {/* PAGE NUMBERS */}
+            {Array.from(
 
-            {getPageNumbers().map(
-              (pageNumber, index) => {
+              {
+                length:
+                  Math.max(
+                    pagination.totalPages,
+                    1
+                  )
+              },
 
-                if (
-                  pageNumber === "..."
-                ) {
+              (_, index) =>
+                index + 1
 
-                  return (
+            ).map(
+              number => (
 
-                    <span
-                      key={
-                        `dots-${index}`
-                      }
-                      className="px-3 py-2 text-gray-500"
-                    >
+                <button
+                  key={
+                    number
+                  }
+                  type="button"
+                  onClick={() =>
+                    goToPage(
+                      number
+                    )
+                  }
+                  className={`min-w-[40px] px-3 py-2 border rounded-md ${
+                    number === page
+                      ? "bg-primary text-white border-primary"
+                      : "hover:bg-gray-50"
+                  }`}
+                >
 
-                      ...
+                  {number}
 
-                    </span>
+                </button>
 
-                  );
-
-                }
-
-
-                return (
-
-                  <button
-                    key={
-                      pageNumber
-                    }
-                    type="button"
-                    onClick={() =>
-                      goToPage(
-                        pageNumber
-                      )
-                    }
-                    className={`min-w-[40px] px-3 py-2 border rounded-md transition ${
-                      pageNumber === page
-                        ? "bg-primary text-white border-primary"
-                        : "hover:bg-gray-50"
-                    }`}
-                  >
-
-                    {pageNumber}
-
-                  </button>
-
-                );
-
-              }
+              )
             )}
 
-
-            {/* NEXT */}
 
             <button
               type="button"
               disabled={
                 page >=
                 pagination.totalPages ||
-                pagination.totalPages <= 1
+                !pagination.totalPages
               }
               onClick={() =>
                 goToPage(
                   page + 1
                 )
               }
-              className="px-3 py-2 border rounded-md disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+              className="px-3 py-2 border rounded-md disabled:opacity-40"
             >
 
-              <i className="fa-solid fa-chevron-right"></i>
+              <i className="fa-solid fa-chevron-right" />
 
             </button>
 

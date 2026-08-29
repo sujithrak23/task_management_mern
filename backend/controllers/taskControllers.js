@@ -5,12 +5,11 @@ const {
   validateObjectId
 } = require("../utils/validation");
 
+const {
+  sendTaskAssignedEmail,
+  sendTaskStatusUpdatedEmail
+} = require("../utils/email");
 
-/*
-|--------------------------------------------------------------------------
-| CONSTANTS
-|--------------------------------------------------------------------------
-*/
 
 const VALID_PRIORITIES = [
   "High",
@@ -31,17 +30,12 @@ const VALID_STATUSES = [
 |--------------------------------------------------------------------------
 | GET ADMIN TASKS
 |--------------------------------------------------------------------------
-| GET /api/tasks/admin
-|
-| Admin can:
-| - View all tasks
-| - Search tasks
-| - Search employee name/email
-| - Paginate tasks
-|--------------------------------------------------------------------------
 */
 
-exports.getAdminTasks = async (req, res) => {
+exports.getAdminTasks = async (
+  req,
+  res
+) => {
 
   try {
 
@@ -72,12 +66,6 @@ exports.getAdminTasks = async (req, res) => {
       (page - 1) * limit;
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Search employees
-    |--------------------------------------------------------------------------
-    */
-
     let employeeIds = [];
 
 
@@ -106,23 +94,19 @@ exports.getAdminTasks = async (req, res) => {
 
             ]
           },
+
           "_id"
         );
 
 
       employeeIds =
         employees.map(
-          employee => employee._id
+          employee =>
+            employee._id
         );
 
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Build task filter
-    |--------------------------------------------------------------------------
-    */
 
     const filter = {};
 
@@ -156,45 +140,29 @@ exports.getAdminTasks = async (req, res) => {
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Count
-    |--------------------------------------------------------------------------
-    */
-
     const total =
       await Task.countDocuments(
         filter
       );
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Get tasks
-    |--------------------------------------------------------------------------
-    */
-
     const tasks =
-      await Task.find(filter)
+      await Task.find(
+        filter
+      )
 
-        .populate(
-          "assignedTo",
-          "name email"
-        )
+      .populate(
+        "assignedTo",
+        "name email"
+      )
 
-        .sort({
-          createdAt: -1
-        })
+      .sort({
+        createdAt: -1
+      })
 
-        .skip(skip)
+      .skip(skip)
 
-        .limit(limit);
-
-
-    const totalPages =
-      Math.ceil(
-        total / limit
-      );
+      .limit(limit);
 
 
     return res.status(200).json({
@@ -211,7 +179,10 @@ exports.getAdminTasks = async (req, res) => {
 
         total,
 
-        totalPages
+        totalPages:
+          Math.ceil(
+            total / limit
+          )
 
       },
 
@@ -248,13 +219,18 @@ exports.getAdminTasks = async (req, res) => {
 |--------------------------------------------------------------------------
 | CREATE TASK
 |--------------------------------------------------------------------------
-| POST /api/tasks/admin
 |
-| Admin creates and assigns a task.
+| Admin creates task.
+|
+| Employee receives email.
+|
 |--------------------------------------------------------------------------
 */
 
-exports.createTask = async (req, res) => {
+exports.createTask = async (
+  req,
+  res
+) => {
 
   try {
 
@@ -265,12 +241,6 @@ exports.createTask = async (req, res) => {
       priority
     } = req.body;
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Required fields
-    |--------------------------------------------------------------------------
-    */
 
     if (
       !title ||
@@ -290,12 +260,6 @@ exports.createTask = async (req, res) => {
 
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Validate text
-    |--------------------------------------------------------------------------
-    */
 
     if (
       typeof title !== "string" ||
@@ -331,12 +295,6 @@ exports.createTask = async (req, res) => {
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Validate employee ID
-    |--------------------------------------------------------------------------
-    */
-
     if (
       !validateObjectId(
         assignedTo
@@ -355,12 +313,6 @@ exports.createTask = async (req, res) => {
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Validate priority
-    |--------------------------------------------------------------------------
-    */
-
     if (
       !VALID_PRIORITIES.includes(
         priority
@@ -378,12 +330,6 @@ exports.createTask = async (req, res) => {
 
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Verify employee
-    |--------------------------------------------------------------------------
-    */
 
     const employee =
       await User.findOne({
@@ -409,12 +355,6 @@ exports.createTask = async (req, res) => {
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Create task
-    |--------------------------------------------------------------------------
-    */
-
     const task =
       await Task.create({
 
@@ -435,16 +375,42 @@ exports.createTask = async (req, res) => {
       });
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Populate employee
-    |--------------------------------------------------------------------------
-    */
-
     await task.populate(
       "assignedTo",
       "name email"
     );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Send assignment email
+    |--------------------------------------------------------------------------
+    */
+
+    let emailSent = false;
+
+
+    try {
+
+      emailSent =
+        await sendTaskAssignedEmail({
+
+          employee,
+
+          task
+
+        });
+
+    }
+
+    catch (emailError) {
+
+      console.error(
+        "Task assignment email error:",
+        emailError
+      );
+
+    }
 
 
     return res.status(201).json({
@@ -453,8 +419,14 @@ exports.createTask = async (req, res) => {
 
       task,
 
+      emailSent,
+
       msg:
-        "Task assigned successfully"
+        emailSent
+
+          ? "Task assigned successfully and email sent to employee"
+
+          : "Task assigned successfully, but email notification could not be sent"
 
     });
 
@@ -484,16 +456,20 @@ exports.createTask = async (req, res) => {
 
 /*
 |--------------------------------------------------------------------------
-| UPDATE TASK
+| UPDATE ADMIN TASK
 |--------------------------------------------------------------------------
-| PUT /api/tasks/admin/:taskId
 |
 | Admin can edit:
-| - Title
-| - Description
-| - Employee
-| - Priority
-| - Status
+|
+| title
+| description
+| employee
+| priority
+| status
+|
+| If employee changes, the new employee receives
+| an assignment email.
+|
 |--------------------------------------------------------------------------
 */
 
@@ -518,12 +494,6 @@ exports.updateTask = async (
     } = req.body;
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Validate task ID
-    |--------------------------------------------------------------------------
-    */
-
     if (
       !validateObjectId(
         taskId
@@ -541,12 +511,6 @@ exports.updateTask = async (
 
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Find task
-    |--------------------------------------------------------------------------
-    */
 
     const task =
       await Task.findById(
@@ -568,11 +532,15 @@ exports.updateTask = async (
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Validate title
-    |--------------------------------------------------------------------------
-    */
+    let reassignedEmployee =
+      null;
+
+
+    const previousAssignedTo =
+      task.assignedTo
+        ? String(task.assignedTo)
+        : null;
+
 
     if (
       title !== undefined
@@ -601,12 +569,6 @@ exports.updateTask = async (
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Validate description
-    |--------------------------------------------------------------------------
-    */
-
     if (
       description !== undefined
     ) {
@@ -633,12 +595,6 @@ exports.updateTask = async (
 
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Validate assigned employee
-    |--------------------------------------------------------------------------
-    */
 
     if (
       assignedTo !== undefined
@@ -689,14 +645,12 @@ exports.updateTask = async (
       task.assignedTo =
         employee._id;
 
+
+      reassignedEmployee =
+        employee;
+
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Validate priority
-    |--------------------------------------------------------------------------
-    */
 
     if (
       priority !== undefined
@@ -726,12 +680,6 @@ exports.updateTask = async (
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Validate status
-    |--------------------------------------------------------------------------
-    */
-
     if (
       status !== undefined
     ) {
@@ -760,25 +708,57 @@ exports.updateTask = async (
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Save
-    |--------------------------------------------------------------------------
-    */
-
     await task.save();
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Populate employee
-    |--------------------------------------------------------------------------
-    */
 
     await task.populate(
       "assignedTo",
       "name email"
     );
+
+
+    let emailSent = false;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Notify new employee if task was reassigned
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      reassignedEmployee &&
+
+      String(
+        task.assignedTo?._id ||
+        task.assignedTo
+      ) !== previousAssignedTo
+    ) {
+
+      try {
+
+        emailSent =
+          await sendTaskAssignedEmail({
+
+            employee:
+              reassignedEmployee,
+
+            task
+
+          });
+
+      }
+
+      catch (emailError) {
+
+        console.error(
+          "Task reassignment email error:",
+          emailError
+        );
+
+      }
+
+    }
 
 
     return res.status(200).json({
@@ -787,8 +767,14 @@ exports.updateTask = async (
 
       task,
 
+      emailSent,
+
       msg:
-        "Task updated successfully"
+        emailSent
+
+          ? "Task updated successfully and assignment email sent"
+
+          : "Task updated successfully"
 
     });
 
@@ -797,7 +783,7 @@ exports.updateTask = async (
   catch (err) {
 
     console.error(
-      "Update task error:",
+      "Update admin task error:",
       err
     );
 
@@ -818,11 +804,7 @@ exports.updateTask = async (
 
 /*
 |--------------------------------------------------------------------------
-| DELETE TASK
-|--------------------------------------------------------------------------
-| DELETE /api/tasks/admin/:taskId
-|
-| Admin can permanently delete a task.
+| DELETE ADMIN TASK
 |--------------------------------------------------------------------------
 */
 
@@ -837,12 +819,6 @@ exports.deleteTask = async (
       taskId
     } = req.params;
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Validate ID
-    |--------------------------------------------------------------------------
-    */
 
     if (
       !validateObjectId(
@@ -861,12 +837,6 @@ exports.deleteTask = async (
 
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Delete task
-    |--------------------------------------------------------------------------
-    */
 
     const task =
       await Task.findByIdAndDelete(
@@ -902,7 +872,7 @@ exports.deleteTask = async (
   catch (err) {
 
     console.error(
-      "Delete task error:",
+      "Delete admin task error:",
       err
     );
 
@@ -925,8 +895,6 @@ exports.deleteTask = async (
 |--------------------------------------------------------------------------
 | GET EMPLOYEE TASKS
 |--------------------------------------------------------------------------
-| GET /api/tasks/employee
-|--------------------------------------------------------------------------
 */
 
 exports.getEmployeeTasks = async (
@@ -946,7 +914,8 @@ exports.getEmployeeTasks = async (
 
       .sort({
 
-        createdAt: -1
+        createdAt:
+          -1
 
       });
 
@@ -988,15 +957,24 @@ exports.getEmployeeTasks = async (
 
 /*
 |--------------------------------------------------------------------------
-| UPDATE EMPLOYEE TASK STATUS
+| EMPLOYEE EDIT TASK
 |--------------------------------------------------------------------------
-| PATCH /api/tasks/employee/:taskId/status
 |
-| Employee can ONLY update status of their own task.
+| Employee can edit:
+|
+| - Title
+| - Description
+| - Priority
+|
+| Employee cannot change:
+|
+| - Assigned employee
+| - Status through this endpoint
+|
 |--------------------------------------------------------------------------
 */
 
-exports.updateTaskStatus = async (
+exports.updateEmployeeTask = async (
   req,
   res
 ) => {
@@ -1009,15 +987,11 @@ exports.updateTaskStatus = async (
 
 
     const {
-      status
+      title,
+      description,
+      priority
     } = req.body;
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Validate task ID
-    |--------------------------------------------------------------------------
-    */
 
     if (
       !validateObjectId(
@@ -1037,40 +1011,11 @@ exports.updateTaskStatus = async (
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Validate status
-    |--------------------------------------------------------------------------
-    */
-
-    if (
-      !VALID_STATUSES.includes(
-        status
-      )
-    ) {
-
-      return res.status(400).json({
-
-        status: false,
-
-        msg:
-          "Invalid task status"
-
-      });
-
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Find employee's own task
-    |--------------------------------------------------------------------------
-    */
-
     const task =
       await Task.findOne({
 
-        _id: taskId,
+        _id:
+          taskId,
 
         assignedTo:
           req.user._id
@@ -1092,14 +1037,86 @@ exports.updateTaskStatus = async (
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Update status
-    |--------------------------------------------------------------------------
-    */
+    if (
+      title !== undefined
+    ) {
 
-    task.status =
-      status;
+      if (
+        typeof title !== "string" ||
+        !title.trim()
+      ) {
+
+        return res.status(400).json({
+
+          status: false,
+
+          msg:
+            "Task title cannot be empty"
+
+        });
+
+      }
+
+
+      task.title =
+        title.trim();
+
+    }
+
+
+    if (
+      description !== undefined
+    ) {
+
+      if (
+        typeof description !== "string" ||
+        !description.trim()
+      ) {
+
+        return res.status(400).json({
+
+          status: false,
+
+          msg:
+            "Task description cannot be empty"
+
+        });
+
+      }
+
+
+      task.description =
+        description.trim();
+
+    }
+
+
+    if (
+      priority !== undefined
+    ) {
+
+      if (
+        !VALID_PRIORITIES.includes(
+          priority
+        )
+      ) {
+
+        return res.status(400).json({
+
+          status: false,
+
+          msg:
+            "Invalid priority"
+
+        });
+
+      }
+
+
+      task.priority =
+        priority;
+
+    }
 
 
     await task.save();
@@ -1112,7 +1129,313 @@ exports.updateTaskStatus = async (
       task,
 
       msg:
-        "Task status updated successfully"
+        "Task updated successfully"
+
+    });
+
+  }
+
+  catch (err) {
+
+    console.error(
+      "Update employee task error:",
+      err
+    );
+
+
+    return res.status(500).json({
+
+      status: false,
+
+      msg:
+        "Unable to update task"
+
+    });
+
+  }
+
+};
+
+
+/*
+|--------------------------------------------------------------------------
+| EMPLOYEE DELETE TASK
+|--------------------------------------------------------------------------
+|
+| Employee can delete only their own assigned task.
+|
+|--------------------------------------------------------------------------
+*/
+
+exports.deleteEmployeeTask = async (
+  req,
+  res
+) => {
+
+  try {
+
+    const {
+      taskId
+    } = req.params;
+
+
+    if (
+      !validateObjectId(
+        taskId
+      )
+    ) {
+
+      return res.status(400).json({
+
+        status: false,
+
+        msg:
+          "Invalid task ID"
+
+      });
+
+    }
+
+
+    const task =
+      await Task.findOneAndDelete({
+
+        _id:
+          taskId,
+
+        assignedTo:
+          req.user._id
+
+      });
+
+
+    if (!task) {
+
+      return res.status(404).json({
+
+        status: false,
+
+        msg:
+          "Task not found"
+
+      });
+
+    }
+
+
+    return res.status(200).json({
+
+      status: true,
+
+      msg:
+        "Task deleted successfully"
+
+    });
+
+  }
+
+  catch (err) {
+
+    console.error(
+      "Delete employee task error:",
+      err
+    );
+
+
+    return res.status(500).json({
+
+      status: false,
+
+      msg:
+        "Unable to delete task"
+
+    });
+
+  }
+
+};
+
+
+/*
+|--------------------------------------------------------------------------
+| EMPLOYEE UPDATE STATUS
+|--------------------------------------------------------------------------
+|
+| Employee can update status only on their own task.
+|
+| Admin receives an email.
+|
+|--------------------------------------------------------------------------
+*/
+
+exports.updateTaskStatus = async (
+  req,
+  res
+) => {
+
+  try {
+
+    const {
+      taskId
+    } = req.params;
+
+
+    const {
+      status
+    } = req.body;
+
+
+    if (
+      !validateObjectId(
+        taskId
+      )
+    ) {
+
+      return res.status(400).json({
+
+        status: false,
+
+        msg:
+          "Invalid task ID"
+
+      });
+
+    }
+
+
+    if (
+      !VALID_STATUSES.includes(
+        status
+      )
+    ) {
+
+      return res.status(400).json({
+
+        status: false,
+
+        msg:
+          "Invalid task status"
+
+      });
+
+    }
+
+
+    const task =
+      await Task.findOne({
+
+        _id:
+          taskId,
+
+        assignedTo:
+          req.user._id
+
+      });
+
+
+    if (!task) {
+
+      return res.status(404).json({
+
+        status: false,
+
+        msg:
+          "Task not found"
+
+      });
+
+    }
+
+
+    const previousStatus =
+      task.status;
+
+
+    task.status =
+      status;
+
+
+    await task.save();
+
+
+    let emailSent = false;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Notify admins only when status actually changes
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      previousStatus !== status
+    ) {
+
+      try {
+
+        const admins =
+          await User.find({
+
+            role:
+              "admin"
+
+          })
+
+          .select(
+            "name email"
+          );
+
+
+        emailSent =
+          await sendTaskStatusUpdatedEmail({
+
+            employee:
+              req.user,
+
+            task,
+
+            previousStatus,
+
+            newStatus:
+              status,
+
+            admins
+
+          });
+
+      }
+
+      catch (emailError) {
+
+        console.error(
+          "Task status email error:",
+          emailError
+        );
+
+      }
+
+    }
+
+
+    return res.status(200).json({
+
+      status: true,
+
+      task,
+
+      emailSent,
+
+      msg:
+
+        previousStatus === status
+
+          ? "Task status is already set to this value"
+
+          : emailSent
+
+            ? "Task status updated and admin notified"
+
+            : "Task status updated, but admin email notification could not be sent"
 
     });
 

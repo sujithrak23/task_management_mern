@@ -10,7 +10,7 @@
     "Task manager",
     "Tasks"
   ],
-  "author": "Aayush",
+  "author": "Meena",
   "license": "ISC",
   "description": "The backend part of simple task manager with user authentication",
   "dependencies": {
@@ -20,7 +20,8 @@
     "express": "^4.17.3",
     "jsonwebtoken": "^8.5.1",
     "mern-task-manager": "file:..",
-    "mongoose": "^6.2.3"
+    "mongoose": "^6.2.3",
+    "nodemailer": "^6.9.16"
   },
   "devDependencies": {
     "nodemon": "^2.0.15"
