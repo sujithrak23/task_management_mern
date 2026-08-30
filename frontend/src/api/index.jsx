@@ -1,6 +1,6 @@
-import axios from "axios";
+  import axios from "axios";
 
-const api = axios.create({
-  baseURL: "/api",
-});
-export default api;
+  const api = axios.create({
+    baseURL: "/api",
+  });
+  export default api;
